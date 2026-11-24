@@ -2,6 +2,9 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/config/game_config.dart';
+import '../cat/services/cat_service.dart';
+import '../cat/widgets/cat_status_panel.dart';
+import '../cat/widgets/interaction_bar.dart';
 import 'game_controller.dart';
 import 'world/home_game.dart';
 import 'world/room_world.dart';
@@ -15,14 +18,19 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  late final CatService _catService;
   late final GameController _controller;
   late final HomeGame _game;
 
   @override
   void initState() {
     super.initState();
-    _controller = GameController();
-    final room = RoomWorld(onCatStatusChanged: _controller.updateCatStatus);
+    _catService = CatService();
+    _controller = GameController(catService: _catService);
+    final room = RoomWorld(
+      catService: _catService,
+      onCatStatusChanged: _controller.updateCatStatus,
+    );
     _controller.attachRoom(room);
     _game = HomeGame(room: room);
   }
@@ -30,6 +38,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void dispose() {
     _controller.dispose();
+    _catService.dispose();
     super.dispose();
   }
 
@@ -44,9 +53,16 @@ class _GameScreenState extends State<GameScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _StatusChip(controller: _controller),
+                  _ActivityChip(controller: _controller),
+                  const SizedBox(height: 8),
+                  CatStatusPanel(catService: _catService),
                   const Spacer(),
-                  _BottomPanel(controller: _controller),
+                  _FeedbackText(controller: _controller),
+                  const SizedBox(height: 8),
+                  InteractionBar(
+                    catService: _catService,
+                    onInteract: _controller.interact,
+                  ),
                 ],
               ),
             ),
@@ -57,8 +73,8 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.controller});
+class _ActivityChip extends StatelessWidget {
+  const _ActivityChip({required this.controller});
 
   final GameController controller;
 
@@ -67,9 +83,8 @@ class _StatusChip extends StatelessWidget {
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
-        final cell = controller.catCell;
         return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: const Color(0xE6FFFFFF),
             borderRadius: BorderRadius.circular(24),
@@ -77,11 +92,10 @@ class _StatusChip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.pets, size: 20),
+              const Icon(Icons.pets, size: 18),
               const SizedBox(width: 8),
               Text(
-                '${GameConfig.catName} · ${controller.catActivity.label}'
-                ' · tile ${cell.col}, ${cell.row}',
+                '${GameConfig.catName} · ${controller.catActivity.label}',
                 style: Theme.of(context).textTheme.labelLarge,
               ),
             ],
@@ -92,27 +106,27 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
-class _BottomPanel extends StatelessWidget {
-  const _BottomPanel({required this.controller});
+class _FeedbackText extends StatelessWidget {
+  const _FeedbackText({required this.controller});
 
   final GameController controller;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'Tap the floor to call ${GameConfig.catName}',
-          style: Theme.of(context).textTheme.bodyMedium,
-        ),
-        const SizedBox(height: 8),
-        FilledButton.icon(
-          onPressed: controller.sendCatToRandomTile,
-          icon: const Icon(Icons.shuffle),
-          label: const Text('Send to random spot'),
-        ),
-      ],
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        // Fixed height so the layout does not jump when the text appears.
+        return SizedBox(
+          height: 24,
+          child: Center(
+            child: Text(
+              controller.feedbackMessage ?? '',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        );
+      },
     );
   }
 }
