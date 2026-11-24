@@ -20,4 +20,9 @@ class GameColors {
   static const Color catEarInner = Color(0xFFF7B7B7);
   static const Color catFeature = Color(0xFF4A3426);
   static const Color shadow = Color(0x33000000);
+  
+  static const Color bowl = Color(0xFFB07A5A);
+  static const Color bowlInner = Color(0xFFE8C9A8);
+  static const Color toy = Color(0xFFE5737A);
+  static const Color heart = Color(0xFFFF6B8A);
 }
