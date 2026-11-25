@@ -48,44 +48,44 @@
 ## Phase 2: Cat Gameplay
 
 ### Cat Status
-- [ ] Create cat state model.
-- [ ] Implement Hunger.
-- [ ] Implement Energy.
-- [ ] Implement Happiness.
-- [ ] Implement Affection.
-- [ ] Implement status limits.
-- [ ] Implement status progression.
+- [✓] Create cat state model.
+- [✓] Implement Hunger.
+- [✓] Implement Energy.
+- [✓] Implement Happiness.
+- [✓] Implement Affection.
+- [✓] Implement status limits.
+- [✓] Implement status progression.
 
 ### Player Interactions
-- [ ] Implement feeding.
-- [ ] Implement petting.
-- [ ] Implement playing.
-- [ ] Connect interactions to cat status.
-- [ ] Implement interaction feedback.
+- [✓] Implement feeding.
+- [✓] Implement petting.
+- [✓] Implement playing.
+- [✓] Connect interactions to cat status.
+- [✓] Implement interaction feedback.
 
 ### Autonomous Behavior
-- [ ] Implement behavior state system.
-- [ ] Implement Idle.
-- [ ] Implement Walking.
-- [ ] Implement Sitting.
-- [ ] Implement Sleeping.
-- [ ] Implement Playing.
-- [ ] Implement Eating.
-- [ ] Implement basic behavior selection.
-- [ ] Test behavior transitions.
+- [✓] Implement behavior state system.
+- [✓] Implement Idle.
+- [✓] Implement Walking.
+- [✓] Implement Sitting.
+- [✓] Implement Sleeping.
+- [✓] Implement Playing.
+- [✓] Implement Eating.
+- [✓] Implement basic behavior selection.
+- [✓] Test behavior transitions.
 
 ---
 
 ## Phase 3: Economy and Time
 
-- [ ] Create coin model.
-- [ ] Implement economy service.
-- [ ] Implement passive income.
-- [ ] Implement offline income.
-- [ ] Implement offline income cap.
-- [ ] Implement configurable economy values.
-- [ ] Implement reward UI.
-- [ ] Test economy calculations.
+- [✓] Create coin model.
+- [✓] Implement economy service.
+- [✓] Implement passive income.
+- [✓] Implement offline income.  
+- [✓] Implement offline income cap.  
+- [✓] Implement configurable economy values.
+- [✓] Implement reward UI.
+- [✓] Test economy calculations.
 
 ---
 

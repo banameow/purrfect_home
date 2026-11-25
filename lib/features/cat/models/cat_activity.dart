@@ -1,9 +1,11 @@
 /// What the cat is currently doing.
-///
-/// Phase 1 only needs idle/walking. Phase 2 adds sitting, sleeping, etc.
 enum CatActivity {
   idle('Idle'),
-  walking('Walking');
+  walking('Walking'),
+  sitting('Sitting'),
+  sleeping('Sleeping'),
+  playing('Playing'),
+  eating('Eating');
 
   const CatActivity(this.label);
 

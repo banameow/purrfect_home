@@ -1,26 +1,40 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 
 import '../../core/config/game_config.dart';
 import '../cat/models/cat_activity.dart';
+import '../cat/services/cat_service.dart';
+import '../economy/services/economy_service.dart';
 import '../room/models/iso_grid.dart';
 import 'world/room_world.dart';
 
 /// Bridge between Flutter UI and the Flame world.
 ///
 /// - Flame -> Flutter: the world calls [updateCatStatus]; widgets listen.
-/// - Flutter -> Flame: widgets call commands such as [sendCatToRandomTile].
+/// - Flutter -> Flame: widgets call [interact]; accepted interactions are
+///   forwarded to the world so the cat animates them.
+/// - [collectCoins] moves jar coins into the wallet and shows feedback.
 class GameController extends ChangeNotifier {
+  GameController({required this.catService, required this.economyService});
+
+  final CatService catService;
+  final EconomyService economyService;
+
   RoomWorld? _room;
   bool _disposed = false;
+  Timer? _feedbackTimer;
 
   CatActivity _catActivity = CatActivity.idle;
   GridPoint _catCell = const GridPoint(
     GameConfig.catStartColumn,
     GameConfig.catStartRow,
   );
+  String? _feedbackMessage;
 
   CatActivity get catActivity => _catActivity;
   GridPoint get catCell => _catCell;
+  String? get feedbackMessage => _feedbackMessage;
 
   void attachRoom(RoomWorld room) => _room = room;
 
@@ -33,12 +47,52 @@ class GameController extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Flutter -> Flame command: send the cat to a random tile.
-  void sendCatToRandomTile() => _room?.sendCatToRandomTile();
+  /// Feed / pet / play. Status changes are applied by [CatService]; the
+  /// animation is played by the world only if the interaction was accepted.
+  void interact(CatInteraction type) {
+    final result = catService.interact(type);
+    if (result.accepted) {
+      _room?.playInteraction(type, result.durationSeconds);
+    }
+    _showFeedback(result.message);
+  }
+
+  /// Collects the coins waiting in the jar.
+  void collectCoins() {
+    final collected = economyService.collect();
+    if (collected > 0) {
+      _showFeedback('+$collected ${collected == 1 ? 'coin' : 'coins'}');
+    }
+  }
+
+  /// Grants a reward straight to the wallet and shows feedback.
+  /// Used by task rewards (Phase 6) and any future gifts.
+  void grantReward(int amount, {String? reason}) {
+    if (amount <= 0) return;
+    economyService.earn(amount);
+    final coins = '+$amount ${amount == 1 ? 'coin' : 'coins'}';
+    _showFeedback(reason == null ? coins : '$reason $coins');
+  }
+
+  void _showFeedback(String message) {
+    if (_disposed) return;
+    _feedbackTimer?.cancel();
+    _feedbackMessage = message;
+    notifyListeners();
+    _feedbackTimer = Timer(
+      Duration(milliseconds: (GameConfig.feedbackSeconds * 1000).round()),
+      () {
+        if (_disposed) return;
+        _feedbackMessage = null;
+        notifyListeners();
+      },
+    );
+  }
 
   @override
   void dispose() {
     _disposed = true;
+    _feedbackTimer?.cancel();
     _room = null;
     super.dispose();
   }
