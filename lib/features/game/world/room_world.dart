@@ -3,6 +3,7 @@ import 'package:flame/components.dart';
 import '../../../core/config/game_config.dart';
 import '../../cat/models/cat_activity.dart';
 import '../../cat/services/cat_service.dart';
+import '../../economy/services/economy_service.dart';
 import '../../room/models/iso_grid.dart';
 import '../components/cat_component.dart';
 import '../components/room_floor_component.dart';
@@ -11,11 +12,17 @@ import '../components/room_tap_layer.dart';
 /// The Flame world: room floor, tap handling and the cat.
 ///
 /// Reports cat status changes outward via [onCatStatusChanged]; it knows
-/// nothing about Flutter widgets or persistence.
+/// nothing about Flutter widgets or persistence. It also drives the game
+/// clock for passive income (the Flame loop pauses in the background).
 class RoomWorld extends World {
-  RoomWorld({required this.catService, required this.onCatStatusChanged});
+  RoomWorld({
+    required this.catService,
+    required this.economyService,
+    required this.onCatStatusChanged,
+  });
 
   final CatService catService;
+  final EconomyService economyService;
   final CatStatusCallback onCatStatusChanged;
 
   final IsoGrid grid = IsoGrid.centered(
@@ -49,6 +56,12 @@ class RoomWorld extends World {
       RoomTapLayer(grid: grid, onTileTapped: _handleTileTapped),
       cat,
     ]);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    economyService.tick(dt);
   }
 
   // --- Commands (called from Flutter via GameController) ---

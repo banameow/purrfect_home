@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import '../../core/config/game_config.dart';
 import '../cat/models/cat_activity.dart';
 import '../cat/services/cat_service.dart';
+import '../economy/services/economy_service.dart';
 import '../room/models/iso_grid.dart';
 import 'world/room_world.dart';
 
@@ -13,10 +14,12 @@ import 'world/room_world.dart';
 /// - Flame -> Flutter: the world calls [updateCatStatus]; widgets listen.
 /// - Flutter -> Flame: widgets call [interact]; accepted interactions are
 ///   forwarded to the world so the cat animates them.
+/// - [collectCoins] moves jar coins into the wallet and shows feedback.
 class GameController extends ChangeNotifier {
-  GameController({required this.catService});
+  GameController({required this.catService, required this.economyService});
 
   final CatService catService;
+  final EconomyService economyService;
 
   RoomWorld? _room;
   bool _disposed = false;
@@ -52,6 +55,23 @@ class GameController extends ChangeNotifier {
       _room?.playInteraction(type, result.durationSeconds);
     }
     _showFeedback(result.message);
+  }
+
+  /// Collects the coins waiting in the jar.
+  void collectCoins() {
+    final collected = economyService.collect();
+    if (collected > 0) {
+      _showFeedback('+$collected ${collected == 1 ? 'coin' : 'coins'}');
+    }
+  }
+
+  /// Grants a reward straight to the wallet and shows feedback.
+  /// Used by task rewards (Phase 6) and any future gifts.
+  void grantReward(int amount, {String? reason}) {
+    if (amount <= 0) return;
+    economyService.earn(amount);
+    final coins = '+$amount ${amount == 1 ? 'coin' : 'coins'}';
+    _showFeedback(reason == null ? coins : '$reason $coins');
   }
 
   void _showFeedback(String message) {

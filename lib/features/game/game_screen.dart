@@ -5,6 +5,10 @@ import '../../core/config/game_config.dart';
 import '../cat/services/cat_service.dart';
 import '../cat/widgets/cat_status_panel.dart';
 import '../cat/widgets/interaction_bar.dart';
+import '../economy/services/economy_service.dart';
+import '../economy/widgets/coin_badge.dart';
+import '../economy/widgets/collect_button.dart';
+import '../economy/widgets/offline_income_dialog.dart';
 import 'game_controller.dart';
 import 'world/home_game.dart';
 import 'world/room_world.dart';
@@ -17,29 +21,77 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late final CatService _catService;
+  late final EconomyService _economyService;
   late final GameController _controller;
   late final HomeGame _game;
+
+  /// When the app left the foreground (null while it is in the foreground).
+  /// Phase 7 will persist this so closing the app completely also counts.
+  DateTime? _backgroundedAt;
 
   @override
   void initState() {
     super.initState();
     _catService = CatService();
-    _controller = GameController(catService: _catService);
+    _economyService = EconomyService();
+    _controller = GameController(
+      catService: _catService,
+      economyService: _economyService,
+    );
     final room = RoomWorld(
       catService: _catService,
+      economyService: _economyService,
       onCatStatusChanged: _controller.updateCatStatus,
     );
     _controller.attachRoom(room);
     _game = HomeGame(room: room);
+    WidgetsBinding.instance.addObserver(this);
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller.dispose();
+    _economyService.dispose();
     _catService.dispose();
     super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    switch (state) {
+      case AppLifecycleState.hidden:
+      case AppLifecycleState.paused:
+        // Remember the first moment we left the foreground.
+        _backgroundedAt ??= DateTime.now();
+      case AppLifecycleState.resumed:
+        _handleResume();
+      case AppLifecycleState.inactive:
+      case AppLifecycleState.detached:
+        break;
+    }
+  }
+
+  void _handleResume() {
+    final since = _backgroundedAt;
+    if (since == null) return;
+    _backgroundedAt = null;
+
+    final result = _economyService.applyOfflineIncome(
+      lastActive: since,
+      now: DateTime.now(),
+    );
+    if (result.coins > 0 && mounted) {
+      showDialog<void>(
+        context: context,
+        builder: (_) => OfflineIncomeDialog(
+          result: result,
+          onCollect: _controller.collectCoins,
+        ),
+      );
+    }
   }
 
   @override
@@ -53,11 +105,22 @@ class _GameScreenState extends State<GameScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  _ActivityChip(controller: _controller),
+                  Row(
+                    children: [
+                      _ActivityChip(controller: _controller),
+                      const Spacer(),
+                      CoinBadge(economyService: _economyService),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   CatStatusPanel(catService: _catService),
                   const Spacer(),
                   _FeedbackText(controller: _controller),
+                  const SizedBox(height: 8),
+                  CollectButton(
+                    economyService: _economyService,
+                    onCollect: _controller.collectCoins,
+                  ),
                   const SizedBox(height: 8),
                   InteractionBar(
                     catService: _catService,

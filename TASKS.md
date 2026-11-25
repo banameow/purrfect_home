@@ -78,14 +78,14 @@
 
 ## Phase 3: Economy and Time
 
-- [ ] Create coin model.
-- [ ] Implement economy service.
-- [ ] Implement passive income.
-- [ ] Implement offline income.
-- [ ] Implement offline income cap.
-- [ ] Implement configurable economy values.
-- [ ] Implement reward UI.
-- [ ] Test economy calculations.
+- [✓] Create coin model.
+- [✓] Implement economy service.
+- [✓] Implement passive income.
+- [✓] Implement offline income.  
+- [✓] Implement offline income cap.  
+- [✓] Implement configurable economy values.
+- [✓] Implement reward UI.
+- [✓] Test economy calculations.
 
 ---
 
